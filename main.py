@@ -4,7 +4,6 @@ from pydantic import BaseModel
 import hashlib
 import datetime
 
-
 app = FastAPI()
 app.counter = 0
 app.patient_id = 0
@@ -70,7 +69,8 @@ def auth(password: Optional[str] = None, password_hash: Optional[str] = None):
 def register(patient: Patient):
     app.patient_id += 1
     register_date = datetime.date.today()
-    vaccination_date = register_date + datetime.timedelta(days=len(patient.name.strip()) + len(patient.surname.strip()))
+    name_and_surname_sum = len(get_only_letters(patient.name)) + len(get_only_letters(patient.surname))
+    vaccination_date = register_date + datetime.timedelta(days=name_and_surname_sum)
     registered_patient_data = {
         "id": app.patient_id,
         "name": patient.name,
@@ -79,3 +79,9 @@ def register(patient: Patient):
         "vaccination_date": str(vaccination_date)
     }
     return registered_patient_data
+
+
+def get_only_letters(name):
+    checked_name = [elem for elem in name if elem.isalpha()]
+    final_name = ''.join(checked_name)
+    return final_name
