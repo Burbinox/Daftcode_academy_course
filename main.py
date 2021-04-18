@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
+from typing import Optional
 from pydantic import BaseModel
 import hashlib
 
@@ -57,10 +58,8 @@ def method_options():
 
 
 @app.get('/auth', status_code=204)
-def auth(password: str, password_hash: str):
-    if password == ' ':
-        raise HTTPException(status_code=401)
-    if hashlib.sha512(str.encode(password)).hexdigest() != password_hash:
+def auth(password: Optional[str] = None, password_hash: Optional[str] = None):
+    if not password or not password_hash or hashlib.sha512(str.encode(password)).hexdigest() != str(password_hash):
         raise HTTPException(status_code=401)
 
 
