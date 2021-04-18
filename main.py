@@ -2,9 +2,12 @@ from fastapi import FastAPI, HTTPException, Response
 from typing import Optional
 from pydantic import BaseModel
 import hashlib
+import datetime
+
 
 app = FastAPI()
 app.counter = 0
+app.patient_id = 0
 
 
 class HelloResp(BaseModel):
@@ -63,6 +66,16 @@ def auth(password: Optional[str] = None, password_hash: Optional[str] = None):
         raise HTTPException(status_code=401)
 
 
-# @app.post('/register')
-# def register(patient: Patient):
-#     print(dict(patient))
+@app.post('/register', status_code=201)
+def register(patient: Patient):
+    app.patient_id += 1
+    register_date = datetime.date.today()
+    vaccination_date = register_date + datetime.timedelta(days=len(patient.name.strip()) + len(patient.surname.strip()))
+    registered_patient_data = {
+        "id": app.patient_id,
+        "name": patient.name,
+        "surname": patient.surname,
+        "register_date": str(register_date),
+        "vaccination_date": str(vaccination_date)
+    }
+    return registered_patient_data
