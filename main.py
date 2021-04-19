@@ -94,6 +94,5 @@ def get_patient_by_id(id: int):
 
 
 def get_only_letters(name):
-    checked_name = [elem for elem in name if elem.isalpha()]
-    final_name = ''.join(checked_name)
+    final_name = ''.join([elem for elem in name if elem.isalpha()])
     return final_name
