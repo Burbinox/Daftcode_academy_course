@@ -84,11 +84,11 @@ def register(patient: Patient):
 
 
 @app.get("/patient/{id}")
-def get_patient_by_id(patient_id: int):
-    if patient_id < 1:
+def get_patient_by_id(id: int):
+    if id < 1:
         raise HTTPException(status_code=400)
     for patient in app.patients:
-        if patient['id'] == patient_id:
+        if patient['id'] == id:
             return patient
     raise HTTPException(status_code=404)
 
