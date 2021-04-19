@@ -7,6 +7,7 @@ import datetime
 app = FastAPI()
 app.counter = 0
 app.patient_id = 0
+app.patients = []
 
 
 class HelloResp(BaseModel):
@@ -78,7 +79,18 @@ def register(patient: Patient):
         "register_date": str(register_date),
         "vaccination_date": str(vaccination_date)
     }
+    app.patients.append(registered_patient_data)
     return registered_patient_data
+
+
+@app.get("/patient/{id}")
+def get_patient_by_id(id: int):
+    if id < 1:
+        raise HTTPException(status_code=404)
+    for patient in app.patients:
+        if patient['id'] == id:
+            return patient
+    raise HTTPException(status_code=400)
 
 
 def get_only_letters(name):
