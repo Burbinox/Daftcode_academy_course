@@ -2,5 +2,6 @@
 .vscode
 tests
 .idea
+__pycache__
 
 daftcode_venv
