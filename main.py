@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 import hashlib
 import datetime
+from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 app.counter = 0
@@ -96,3 +97,9 @@ def get_patient_by_id(id: int):
 def get_only_letters(name):
     final_name = ''.join([elem for elem in name if elem.isalpha()])
     return final_name
+
+
+@app.get("/hello", response_class=HTMLResponse)
+def hello():
+    today_date = datetime.date.today()
+    return f"""<h1>Hello! Today date is {today_date}</h1>"""
