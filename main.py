@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Response, Cookie
-import base64
-from typing import Optional
+import hashlib
 import datetime
 from fastapi.responses import HTMLResponse
+from typing import Optional
 
 app = FastAPI()
 app.access_tokens = []
@@ -15,18 +15,21 @@ def hello():
 
 
 @app.post("/login_session")
-def login(response: Response, user: Optional[str] = None,
-          password: Optional[str] = None):
-    if user == '4dm1n' and password == 'NotSoSecurePa$$':
+def login_session(login: str, password: str, response: Response):
+    if login == "4dm1n" and password == "NotSoSecurePa$$":
+        session_token = hashlib.sha256(f"{login}{password}".encode()).hexdigest()
+        response.set_cookie(key="session_token", value=session_token)
+    else:
+        raise HTTPException(status_code=401)
 
-        session_token_uncode = f'{user}{password}dfsds'
-        session_token_bytes = session_token_uncode.encode('ascii')
-        base64_bytes = base64.b64encode(session_token_bytes)
-        session_token = base64_bytes.decode('ascii')
+
+@app.post("/login_token")
+def login_token(login: Optional[str], password: Optional[str], response: Response):
+    if login == "4dm1n" and password == "NotSoSecurePa$$":
+        session_token = hashlib.sha256(f"{login}{password}".encode()).hexdigest()
         app.access_tokens.append(session_token)
-        response.set_cookie(key="session_token",
-                            value=session_token)
-        return {'token': session_token}
+        response.set_cookie(key="session_token", value=session_token)
+        return session_token
     else:
         raise HTTPException(status_code=401)
 
