@@ -1,11 +1,13 @@
-from fastapi import FastAPI, HTTPException, Response, Cookie
-import hashlib
+from fastapi import FastAPI, HTTPException, Response, Depends, status, Cookie
+from hashlib import sha512
 import datetime
 from fastapi.responses import HTMLResponse
-from typing import Optional
+import secrets
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 app = FastAPI()
 app.access_tokens = []
+security = HTTPBasic()
 
 
 @app.get("/hello", response_class=HTMLResponse)
@@ -14,24 +16,27 @@ def hello():
     return f"""<h1>Hello! Today date is {today_date}</h1>"""
 
 
-@app.post("/login_session")
-def login_session(login: str, password: str, response: Response):
-    if login == "4dm1n" and password == "NotSoSecurePa$$":
-        session_token = hashlib.sha256(f"{login}{password}".encode()).hexdigest()
-        response.set_cookie(key="session_token", value=session_token)
+def get_current_username(response: Response,
+                         credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, "4dm1n")
+    correct_password = secrets.compare_digest(credentials.password, "NotSoSecurePa$$")
+
+    if not (correct_username or correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
     else:
-        raise HTTPException(status_code=401)
+        session_token = sha512(f'{credentials.username}{credentials.password}12312'.encode()).hexdigest()
+        app.access_tokens = session_token
+        response.set_cookie(key="session_token", value=session_token)
+    return credentials.username
 
 
-@app.post("/login_token")
-def login_token(login: Optional[str], password: Optional[str], response: Response):
-    if login == "4dm1n" and password == "NotSoSecurePa$$":
-        session_token = hashlib.sha256(f"{login}{password}".encode()).hexdigest()
-        app.access_tokens.append(session_token)
-        response.set_cookie(key="session_token", value=session_token)
-        return session_token
-    else:
-        raise HTTPException(status_code=401)
+@app.post("/login_session", status_code=201)
+def login_session(username: str = Depends(get_current_username)):
+    return {'ok'}
 
 
 @app.post("/login_token")
