@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Depends, status, HTTPException
+from fastapi import FastAPI, Depends, status, HTTPException, Cookie
 import datetime
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, Response, PlainTextResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
 from hashlib import sha256
@@ -42,3 +42,29 @@ def login_session(response: Response, session_token: str = Depends(get_session_t
 def login_token(token: str = Depends(get_session_token)):
     app.access_token.append(token)
     return {'token': token}
+
+
+@app.get("/welcome_session")
+def welcome_session(frt: str = "", session_token: str = Cookie(None)):
+    if session_token not in app.access_session or session_token == '':
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    else:
+        if frt == 'json':
+            return {"message": 'Welcome!'}
+        elif frt == 'html':
+            return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
+        else:
+            return PlainTextResponse(content="Welcome!", status_code=200)
+
+
+@app.get("/welcome_token")
+def welcome_session(frt: str = "", token: str = ""):
+    if token not in app.access_token or token == '':
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    else:
+        if frt == 'json':
+            return {"message": 'Welcome!'}
+        elif frt == 'html':
+            return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
+        else:
+            return PlainTextResponse(content="Welcome!", status_code=200)
