@@ -4,6 +4,8 @@ from fastapi.responses import HTMLResponse, Response, PlainTextResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
 from hashlib import sha256
+from time import time
+from pprint import pprint
 
 app = FastAPI()
 security = HTTPBasic()
@@ -27,7 +29,9 @@ def get_session_token(credentials: HTTPBasicCredentials = Depends(security)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
     else:
-        session_token = sha256(f"{credentials.username}{credentials.password}{app.secret_key}".encode()).hexdigest()
+        time_now = time()
+        session_token = sha256(f"{credentials.username}{credentials.password}"
+                               f"{app.secret_key}{time_now}".encode()).hexdigest()
         return session_token
 
 
@@ -72,4 +76,4 @@ def welcome_session(token: str = "", format: str = ""):
 
 @app.get("/dupa")
 def show_me_what_you_got():
-    return {"app.access_session": app.access_session, "app.access_token": app.access_token}
+    return pprint({"app.access_session": app.access_session, "app.access_token": app.access_token})
