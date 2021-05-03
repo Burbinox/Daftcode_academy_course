@@ -45,26 +45,26 @@ def login_token(token: str = Depends(get_session_token)):
 
 
 @app.get("/welcome_session")
-def welcome_session(frt: str = "", session_token: str = Cookie(None)):
+def welcome_session(format: str = "", session_token: str = Cookie(None)):
     if session_token not in app.access_session or session_token == '':
         raise HTTPException(status_code=401, detail="Unauthorised")
     else:
-        if frt == 'json':
+        if format == 'json':
             return {"message": 'Welcome!'}
-        elif frt == 'html':
+        elif format == 'html':
             return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
         else:
             return PlainTextResponse(content="Welcome!", status_code=200)
 
 
 @app.get("/welcome_token")
-def welcome_session(token: str = "", frt: str = ""):
+def welcome_session(token: str = "", format: str = ""):
     if token not in app.access_token or token == '':
         raise HTTPException(status_code=401, detail="Unauthorised")
     else:
-        if frt == 'json':
+        if format == 'json':
             return {"message": 'Welcome!'}
-        elif frt == 'html':
+        elif format == 'html':
             return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
         else:
             return PlainTextResponse(content="Welcome!", status_code=200)
