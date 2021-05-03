@@ -68,3 +68,8 @@ def welcome_session(token: str = "", format: str = ""):
             return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
         else:
             return PlainTextResponse(content="Welcome!", status_code=200)
+
+
+@app.get("/dupa")
+def show_me_what_you_got():
+    return {"app.access_session": app.access_session, "app.access_token": app.access_token}
