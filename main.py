@@ -76,4 +76,4 @@ def welcome_session(token: str = "", format: str = ""):
 
 @app.get("/dupa")
 def show_me_what_you_got():
-    return pprint({"app.access_session": app.access_session, "app.access_token": app.access_token})
+    return {"app.access_session": app.access_session, "app.access_token": app.access_token}
