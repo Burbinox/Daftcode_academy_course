@@ -19,7 +19,7 @@ def hello():
     return f"""<h1>Hello! Today date is {today_date}</h1>"""
 
 
-def get_session_token(response: Response, credentials: HTTPBasicCredentials = Depends(security)):
+def get_session_token(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, "4dm1n")
     correct_password = secrets.compare_digest(credentials.password, "NotSoSecurePa$$")
 
@@ -27,10 +27,6 @@ def get_session_token(response: Response, credentials: HTTPBasicCredentials = De
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
     else:
-        # session_token_decode = f'{credentials.username}{credentials.password}{app.secret_key}'
-        # session_token_bytes = session_token_decode.encode('ascii')
-        # base64_bytes = base64.b64encode(session_token_bytes)
-        # session_token = base64_bytes.decode('ascii')
         session_token = sha256(f"{credentials.username}{credentials.password}{app.secret_key}".encode()).hexdigest()
         return session_token
 
