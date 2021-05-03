@@ -5,7 +5,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
 from hashlib import sha256
 from time import time
-from pprint import pprint
+from starlette.responses import RedirectResponse
 
 app = FastAPI()
 security = HTTPBasic()
@@ -62,7 +62,7 @@ def welcome_session(format: str = "", session_token: str = Cookie(None)):
 
 
 @app.get("/welcome_token")
-def welcome_session(token: str = "", format: str = ""):
+def welcome_token(token: str = "", format: str = ""):
     if token not in app.access_token or token == '':
         raise HTTPException(status_code=401, detail="Unauthorised")
     else:
@@ -74,6 +74,27 @@ def welcome_session(token: str = "", format: str = ""):
             return PlainTextResponse(content="Welcome!", status_code=200)
 
 
-@app.get("/dupa")
-def show_me_what_you_got():
-    return {"app.access_session": app.access_session, "app.access_token": app.access_token}
+@app.delete("/logout_session")
+def logout_session(format: str = "", session_token: str = Cookie(None)):
+    if session_token not in app.access_session or session_token == '':
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    app.access_session.remove(session_token)
+    return RedirectResponse(url=f"/logged_out?format={format}", status_code=status.HTTP_302_FOUND)
+
+
+@app.delete("/logout_token")
+def logout_token(token: str = "", format: str = ""):
+    if token not in app.access_token or token == '':
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    app.access_token.remove(token)
+    return RedirectResponse(url=f"/logged_out?format={format}", status_code=status.HTTP_302_FOUND)
+
+
+@app.get("/logged_out")
+def logged_out(format: str = ""):
+    if format == 'json':
+        return {"message": "Logged out!"}
+    elif format == 'html':
+        return HTMLResponse(content="<h1>Logged out!</h1>", status_code=200)
+    else:
+        return PlainTextResponse(content="Logged out!", status_code=200)
