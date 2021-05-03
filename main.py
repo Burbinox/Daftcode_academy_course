@@ -108,6 +108,6 @@ def logged_out(format: str = ""):
         return PlainTextResponse(content="Logged out!", status_code=200)
 
 
-@app.get("/dupa")
+@app.get("/show_me_your_secrets")
 def show_me_what_you_got():
     return {"app.access_session": app.access_session, "app.access_token": app.access_token}
