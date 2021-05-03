@@ -44,47 +44,27 @@ def login_token(token: str = Depends(get_session_token)):
     return {'token': token}
 
 
-# @app.get("/welcome_session")
-# def welcome_session(frt: str = "", session_token: str = Cookie(None)):
-#     if session_token not in app.access_session or session_token == '':
-#         raise HTTPException(status_code=401, detail="Unauthorised")
-#     else:
-#         if frt == 'json':
-#             return {"message": 'Welcome!'}
-#         elif frt == 'html':
-#             return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
-#         else:
-#             return PlainTextResponse(content="Welcome!", status_code=200)
-#
-#
-# @app.get("/welcome_token")
-# def welcome_session(frt: str = "", token: str = ""):
-#     if token not in app.access_token or token == '':
-#         raise HTTPException(status_code=401, detail="Unauthorised")
-#     else:
-#         if frt == 'json':
-#             return {"message": 'Welcome!'}
-#         elif frt == 'html':
-#             return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
-#         else:
-#             return PlainTextResponse(content="Welcome!", status_code=200)
-def check_format(access, access_table, format):
-    if access not in access_table or access == '':
+@app.get("/welcome_session")
+def welcome_session(frt: str = "", session_token: str = Cookie(None)):
+    if session_token not in app.access_session or session_token == '':
         raise HTTPException(status_code=401, detail="Unauthorised")
     else:
-        if format == 'json':
+        if frt == 'json':
             return {"message": 'Welcome!'}
-        elif format == 'html':
+        elif frt == 'html':
             return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
         else:
             return PlainTextResponse(content="Welcome!", status_code=200)
 
 
-@app.get("/welcome_session")
-def welcome_session(format: str = "", session_token: str = Cookie(None)):
-    return check_format(session_token, app.access_session, format)
-
-
 @app.get("/welcome_token")
-def welcome_token(token: str = "", format: str = ""):
-    return check_format(token, app.access_token, format)
+def welcome_session(token: str = "", frt: str = ""):
+    if token not in app.access_token or token == '':
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    else:
+        if frt == 'json':
+            return {"message": 'Welcome!'}
+        elif frt == 'html':
+            return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
+        else:
+            return PlainTextResponse(content="Welcome!", status_code=200)
