@@ -1,8 +1,13 @@
 import sqlite3
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 app = FastAPI()
+
+
+class Category(BaseModel):
+    name: str
 
 
 @app.get("/categories")
@@ -95,3 +100,49 @@ async def products_id_orders(id: int):
         raise HTTPException(status_code=404)
     return {"orders": [
         {"id": i["id"], "customer": i["customer"], "quantity": i["quantity"], "total_price": round(((i['unitprice'] * i['quantity']) - (i['discount'] * (i['unitprice'] * i['quantity']))), 2)}for i in data]}
+
+
+@app.post('/categories', status_code=201)
+async def categories_post(category: Category):
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
+    cursor = app.db_connection.execute(
+        "INSERT INTO Categories (CategoryName) VALUES (?)", (category.name,))
+    app.db_connection.commit()
+    new_categories_id = cursor.lastrowid
+    app.db_connection.row_factory = sqlite3.Row
+    categories = app.db_connection.execute(
+        """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
+        (new_categories_id,)).fetchone()
+    return categories
+
+
+@app.put('/categories/{id}', status_code=200)
+async def categories_id(category: Category, id: int):
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
+    app.db_connection.execute(
+        "UPDATE Categories SET CategoryName = ? WHERE CategoryID = ?", (
+            category.name, id,)
+    )
+    app.db_connection.commit()
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(
+        """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
+        (id,)).fetchone()
+    if data is None:
+        raise HTTPException(status_code=404)
+    return data
+
+
+@app.delete('/categories/{id}', status_code=200)
+async def categories_delete(id: int):
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
+    cursor = app.db_connection.execute(
+        "DELETE FROM Categories WHERE CategoryID = ?", (id,)
+    )
+    app.db_connection.commit()
+    if cursor.rowcount:
+        return {"deleted": 1}
+    raise HTTPException(status_code=404)
