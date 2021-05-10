@@ -74,3 +74,21 @@ async def products_extended():
     ready_data = [{"id": i['id'], "name": i['name'], "category": i['category'], "supplier": i['supplier']} for i in prod]
     app.db_connection.close()
     return {"products_extended": ready_data}
+
+
+@app.get('/products/{id}/orders', status_code=200)
+async def products_id_orders(id: int):
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(f'''SELECT Products.ProductID, Orders.OrderID AS id, 
+    Customers.CompanyName AS customer, [Order Details].Quantity AS quantity, [Order Details].UnitPrice AS unitprice, 
+    [Order Details].Discount as discount FROM Products 
+    JOIN [Order Details] ON Products.ProductID = [Order Details].ProductID 
+    JOIN Orders ON [Order Details].OrderID = Orders.OrderID JOIN Customers ON Orders.CustomerID = Customers.CustomerID 
+    WHERE Products.ProductID = {id} ORDER BY Orders.OrderID''').fetchall()
+    app.db_connection.close()
+    if data is None:
+        raise HTTPException(status_code=404)
+    return {"orders": [
+        {"id": i["id"], "customer": i["customer"], "quantity": i["quantity"], "total_price": round(((i['unitprice'] * i['quantity']) - (i['discount'] * (i['unitprice'] * i['quantity']))), 2)}for i in data]}
