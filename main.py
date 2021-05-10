@@ -1,6 +1,6 @@
 import sqlite3
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
 
@@ -9,6 +9,7 @@ app = FastAPI()
 async def categories():
     app.db_connection = sqlite3.connect("northwind.db")
     app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
+    app.db_connection.row_factory = sqlite3.Row
     category_id = app.db_connection.execute("SELECT CategoryID, CategoryName FROM Categories ").fetchall()
     ready_data = [{"id": item[0], "name": item[1]}for item in category_id]
     return {
@@ -20,8 +21,21 @@ async def categories():
 async def customers():
     app.db_connection = sqlite3.connect("northwind.db")
     app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
+    app.db_connection.row_factory = sqlite3.Row
     customers_id = app.db_connection.execute("SELECT CustomerID, CompanyName FROM Customers ").fetchall()
     ready_data = [{"id": item[0], "name": item[1]}for item in customers_id]
     return {
         "categories": ready_data
     }
+
+
+@app.get('/products/{id}', status_code=200)
+async def products(id: int):
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")
+    app.db_connection.row_factory = sqlite3.Row
+    product = app.db_connection.execute("SELECT ProductName FROM Products WHERE ProductID = ?", (id,)).fetchone()
+    if product is None:
+        raise HTTPException(status_code=404)
+    app.db_connection.close()
+    return {"id": id, "name": product['ProductName']}
