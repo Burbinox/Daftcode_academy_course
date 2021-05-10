@@ -88,7 +88,7 @@ async def products_id_orders(id: int):
     JOIN Orders ON [Order Details].OrderID = Orders.OrderID JOIN Customers ON Orders.CustomerID = Customers.CustomerID 
     WHERE Products.ProductID = {id} ORDER BY Orders.OrderID''').fetchall()
     app.db_connection.close()
-    if data is None:
+    if not data:
         raise HTTPException(status_code=404)
     return {"orders": [
         {"id": i["id"], "customer": i["customer"], "quantity": i["quantity"], "total_price": round(((i['unitprice'] * i['quantity']) - (i['discount'] * (i['unitprice'] * i['quantity']))), 2)}for i in data]}
