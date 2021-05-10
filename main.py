@@ -23,12 +23,15 @@ async def customers():
     app.db_connection = sqlite3.connect("northwind.db")
     app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
     app.db_connection.row_factory = sqlite3.Row
-    customers_id = app.db_connection.execute("SELECT CustomerID, CompanyName FROM Customers ").fetchall()
+    cursor = app.db_connection.cursor()
+    customer = cursor.execute(
+        "SELECT CustomerID id, COALESCE(CompanyName, '') name, "
+        "COALESCE(Address, '') || ' ' || COALESCE(PostalCode, '') || ' ' || COALESCE(City, '') || ' ' || "
+        "COALESCE(Country, '') full_address "
+        "FROM Customers c ORDER BY UPPER(CustomerID);"
+    ).fetchall()
     app.db_connection.close()
-    ready_data = [{"id": item[0], "name": item[1]}for item in customers_id]
-    return {
-        "categories": ready_data
-    }
+    return dict(customers=customer)
 
 
 @app.get('/products/{id}', status_code=200)
