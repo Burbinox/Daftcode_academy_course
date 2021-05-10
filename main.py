@@ -6,18 +6,6 @@ from pydantic import BaseModel
 app = FastAPI()
 
 
-@app.on_event("startup")
-async def startup():
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(
-        errors="ignore")  # northwind specific
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    app.db_connection.close()
-
-
 class Category(BaseModel):
     name: str
 
@@ -116,6 +104,8 @@ async def products_id_orders(id: int):
 
 @app.post('/categories', status_code=201)
 async def categories_post(category: Category):
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
     cursor = app.db_connection.execute(
         "INSERT INTO Categories (CategoryName) VALUES (?)", (category.name,))
     app.db_connection.commit()
@@ -124,11 +114,14 @@ async def categories_post(category: Category):
     categories = app.db_connection.execute(
         """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
         (new_categories_id,)).fetchone()
+    app.db_connection.close()
     return categories
 
 
 @app.put('/categories/{id}', status_code=200)
 async def categories_id(category: Category, id: int):
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
     app.db_connection.execute(
         "UPDATE Categories SET CategoryName = ? WHERE CategoryID = ?", (
             category.name, id,)
@@ -138,6 +131,7 @@ async def categories_id(category: Category, id: int):
     data = app.db_connection.execute(
         """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
         (id,)).fetchone()
+    app.db_connection.close()
     if data is None:
         raise HTTPException(status_code=404)
     return data
@@ -145,10 +139,13 @@ async def categories_id(category: Category, id: int):
 
 @app.delete('/categories/{id}', status_code=200)
 async def categories_delete(id: int):
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
     cursor = app.db_connection.execute(
         "DELETE FROM Categories WHERE CategoryID = ?", (id,)
     )
     app.db_connection.commit()
+    app.db_connection.close()
     if cursor.rowcount:
         return {"deleted": 1}
     raise HTTPException(status_code=404)
