@@ -58,3 +58,19 @@ async def employees(limit: int = -1, offset: int = 0, order: str = 'id'):
     ready_data = [{"id": i['EmployeeID'], "last_name":i['LastName'],
                    "first_name":i['FirstName'], "city":i['City']} for i in employee]
     return {"employees": ready_data}
+
+
+@app.get('/products_extended', status_code=200)
+async def products_extended():
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")
+    app.db_connection.row_factory = sqlite3.Row
+    prod = app.db_connection.execute('''
+    SELECT Products.ProductID AS id, Products.ProductName AS name, Categories.CategoryName AS category, 
+    Suppliers.CompanyName AS supplier FROM Products 
+    JOIN Categories ON Products.CategoryID = Categories.CategoryID 
+    JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID ORDER BY Products.ProductID
+    ''').fetchall()
+    ready_data = [{"id": i['id'], "name": i['name'], "category": i['category'], "supplier": i['supplier']} for i in prod]
+    app.db_connection.close()
+    return {"products_extended": ready_data}
