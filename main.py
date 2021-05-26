@@ -103,3 +103,11 @@ def create_session_via_cookie(response: Response):
     app.access_tokens.append(session_token)
     response.set_cookie(key="session_token", value=session_token)
     return "Logged correctly"
+
+
+@app.get("/get_text")
+def get_all_text_objects(db: Session = Depends(get_db)):
+    """
+    this endpoint returns every object in database
+    """
+    return db.query(models.Text).all()
