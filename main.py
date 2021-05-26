@@ -33,7 +33,7 @@ def delete_text_with_given_id(id: int, db: Session = Depends(get_db)):
 @app.post("/put_text")
 def create_or_edit_text(text_obj_from_user: TextObj, db: Session = Depends(get_db)):
     text_obj_from_user = dict(text_obj_from_user)
-    if len(text_obj_from_user['text']) > 160:
+    if len(text_obj_from_user['text']) > 160 or len(text_obj_from_user['text']) == 0:
         raise HTTPException(status_code=400, detail="text too long (more than 160 characters)")
     text_obj = db.query(models.Text).filter(models.Text.id == text_obj_from_user["id"]).first()
     if text_obj is None:
