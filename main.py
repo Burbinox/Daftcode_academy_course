@@ -1,151 +1,113 @@
-import sqlite3
-
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Response, Cookie
+import models
+from database import SessionLocal
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from hashlib import sha256
+from datetime import datetime
 
 app = FastAPI()
+app.access_tokens = []
+app.secret_key = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ-trythis'
 
 
-class Category(BaseModel):
-    name: str
+def get_db():
+    try:
+        db = SessionLocal()
+        yield db
+    finally:
+        db.close()
 
 
-@app.get("/categories")
-async def categories():
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
-    app.db_connection.row_factory = sqlite3.Row
-    category_id = app.db_connection.execute("SELECT CategoryID, CategoryName FROM Categories ").fetchall()
-    app.db_connection.close()
-    ready_data = [{"id": item[0], "name": item[1]}for item in category_id]
-    return {
-        "categories": ready_data
+class TextObj(BaseModel):
+    id: int
+    text: str
+
+
+class ResponseObj(BaseModel):
+    id: int
+    visit_counter: int
+    text: str
+
+
+@app.delete('/delete_text/{id}')
+def delete_text_with_given_id(id: int, db: Session = Depends(get_db), session_token: str = Cookie(None)):
+    """
+    endpoint which delete Text object with given id from database, allowed only for authorized users
+    """
+    if session_token not in app.access_tokens:
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    text_obj = db.query(models.Text).filter(models.Text.id == id).first()
+    if text_obj is None:
+        raise HTTPException(status_code=404, detail='text_not_found')
+    db.delete(text_obj)
+    db.commit()
+    return f"text with id: {id} - deleted"
+
+
+@app.post("/put_text")
+def create_or_edit_text(text_obj_from_user: TextObj, db: Session = Depends(get_db), session_token: str = Cookie(None)):
+    """
+    endpoint which create or edit (depends if object with given id exist in database or not)
+    text object in database, allowed only for authorized users
+
+    example object:
+    {
+      "id": 10,
+      "text": "some text you wanna stored in db"
     }
+    """
+    if session_token not in app.access_tokens:
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    text_obj_from_user = dict(text_obj_from_user)
+    if len(text_obj_from_user['text']) > 160 or len(text_obj_from_user['text']) == 0:
+        raise HTTPException(status_code=400, detail="text too long (more than 160 characters)")
+    text_obj = db.query(models.Text).filter(models.Text.id == text_obj_from_user["id"]).first()
+    if text_obj is None:
+        item = models.Text(id=text_obj_from_user['id'], visit_counter=0,
+                           text=text_obj_from_user['text'])
+        db.add(item)
+        db.commit()
+        return f"text with id: {text_obj_from_user['id']} - created"
+    else:
+        text_obj.text = text_obj_from_user['text']
+        text_obj.visit_counter = 0
+        db.commit()
+        return f"text with id: {text_obj_from_user['id']} - edited"
 
 
-@app.get("/customers")
-async def customers():
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
-    app.db_connection.row_factory = sqlite3.Row
-    cursor = app.db_connection.cursor()
-    customer = cursor.execute(
-        "SELECT CustomerID id, COALESCE(CompanyName, '') name, "
-        "COALESCE(Address, '') || ' ' || COALESCE(PostalCode, '') || ' ' || COALESCE(City, '') || ' ' || "
-        "COALESCE(Country, '') full_address "
-        "FROM Customers c ORDER BY UPPER(CustomerID);"
-    ).fetchall()
-    app.db_connection.close()
-    return dict(customers=customer)
+@app.get("/get_text/{id}")
+def get_text_form_database(id: int, db: Session = Depends(get_db)):
+    """
+    endpoint which get text with given id from the database to the user,
+    works for every user (both authorized and unauthorized)
+
+    return: dict with text or HTTPException with 401 code when text not exist
+    """
+    text_obj = db.query(models.Text).filter(models.Text.id == id).first()
+    if text_obj is None:
+        raise HTTPException(status_code=404, detail='text_not_found')
+    text_obj.visit_counter = text_obj.visit_counter + 1
+    db.commit()
+    return ResponseObj(id=text_obj.id, visit_counter=text_obj.visit_counter,
+                       text=text_obj.text)
 
 
-@app.get('/products/{id}', status_code=200)
-async def products(id: int):
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")
-    app.db_connection.row_factory = sqlite3.Row
-    product = app.db_connection.execute(f"SELECT ProductName FROM Products WHERE ProductID = {id}").fetchone()
-    if product is None:
-        raise HTTPException(status_code=404)
-    app.db_connection.close()
-    return {"id": id, "name": product['ProductName']}
+@app.get('/login')
+def create_session_via_cookie(response: Response):
+    """
+    endpoint witch let you be authorized, its sets cookie for your session
+    """
+    now = datetime.now()
+    session_token = sha256(f'{app.secret_key}{now}'.encode()).hexdigest()
+    app.access_tokens.append(session_token)
+    response.set_cookie(key="session_token", value=session_token)
+    return "Logged correctly"
 
 
-@app.get('/employees', status_code=200)
-async def employees(limit: int = -1, offset: int = 0, order: str = 'id'):
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")
-    app.db_connection.row_factory = sqlite3.Row
-    columns = {'first_name' : 'FirstName', 'last_name' : 'LastName', 'city' : 'City', 'id' : 'EmployeeID'}
-    if order not in columns.keys():
-        raise HTTPException(status_code=400)
-    order = columns[order]
-    employee = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM "
-                                         f"Employees ORDER BY {order} LIMIT {limit} OFFSET {offset}").fetchall()
-    app.db_connection.close()
-    ready_data = [{"id": i['EmployeeID'], "last_name":i['LastName'],
-                   "first_name":i['FirstName'], "city":i['City']} for i in employee]
-    return {"employees": ready_data}
-
-
-@app.get('/products_extended', status_code=200)
-async def products_extended():
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")
-    app.db_connection.row_factory = sqlite3.Row
-    prod = app.db_connection.execute('''
-    SELECT Products.ProductID AS id, Products.ProductName AS name, Categories.CategoryName AS category, 
-    Suppliers.CompanyName AS supplier FROM Products 
-    JOIN Categories ON Products.CategoryID = Categories.CategoryID 
-    JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID ORDER BY Products.ProductID
-    ''').fetchall()
-    ready_data = [{"id": i['id'], "name": i['name'], "category": i['category'], "supplier": i['supplier']} for i in prod]
-    app.db_connection.close()
-    return {"products_extended": ready_data}
-
-
-@app.get('/products/{id}/orders', status_code=200)
-async def products_id_orders(id: int):
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
-    app.db_connection.row_factory = sqlite3.Row
-    data = app.db_connection.execute(f'''SELECT Products.ProductID, Orders.OrderID AS id, 
-    Customers.CompanyName AS customer, [Order Details].Quantity AS quantity, [Order Details].UnitPrice AS unitprice, 
-    [Order Details].Discount as discount FROM Products 
-    JOIN [Order Details] ON Products.ProductID = [Order Details].ProductID 
-    JOIN Orders ON [Order Details].OrderID = Orders.OrderID JOIN Customers ON Orders.CustomerID = Customers.CustomerID 
-    WHERE Products.ProductID = {id} ORDER BY Orders.OrderID''').fetchall()
-    app.db_connection.close()
-    if not data:
-        raise HTTPException(status_code=404)
-    return {"orders": [
-        {"id": i["id"], "customer": i["customer"], "quantity": i["quantity"], "total_price": round(((i['unitprice'] * i['quantity']) - (i['discount'] * (i['unitprice'] * i['quantity']))), 2)}for i in data]}
-
-
-@app.post('/categories', status_code=201)
-async def categories_post(category: Category):
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
-    cursor = app.db_connection.execute(
-        "INSERT INTO Categories (CategoryName) VALUES (?)", (category.name,))
-    app.db_connection.commit()
-    new_categories_id = cursor.lastrowid
-    app.db_connection.row_factory = sqlite3.Row
-    categories = app.db_connection.execute(
-        """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
-        (new_categories_id,)).fetchone()
-    app.db_connection.close()
-    return categories
-
-
-@app.put('/categories/{id}', status_code=200)
-async def categories_id(category: Category, id: int):
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
-    app.db_connection.execute(
-        "UPDATE Categories SET CategoryName = ? WHERE CategoryID = ?", (
-            category.name, id,)
-    )
-    app.db_connection.commit()
-    app.db_connection.row_factory = sqlite3.Row
-    data = app.db_connection.execute(
-        """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
-        (id,)).fetchone()
-    app.db_connection.close()
-    if data is None:
-        raise HTTPException(status_code=404)
-    return data
-
-
-@app.delete('/categories/{id}', status_code=200)
-async def categories_delete(id: int):
-    app.db_connection = sqlite3.connect("northwind.db")
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
-    cursor = app.db_connection.execute(
-        "DELETE FROM Categories WHERE CategoryID = ?", (id,)
-    )
-    app.db_connection.commit()
-    app.db_connection.close()
-    if cursor.rowcount:
-        return {"deleted": 1}
-    raise HTTPException(status_code=404)
+@app.get("/get_text")
+def get_all_text_objects(db: Session = Depends(get_db)):
+    """
+    this endpoint returns every object in database
+    """
+    return db.query(models.Text).all()
