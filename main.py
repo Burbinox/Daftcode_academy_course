@@ -108,6 +108,6 @@ def create_session_via_cookie(response: Response):
 @app.get("/get_text")
 def get_all_text_objects(db: Session = Depends(get_db)):
     """
-    this endpoint returns every object in database
+    this endpoint returns every object in database, its doesn't change visit counters for every object
     """
     return db.query(models.Text).all()
