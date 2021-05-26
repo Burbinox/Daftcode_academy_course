@@ -33,3 +33,5 @@ endopoint służacy do autoryzacji, dzięki niemu użytkownik będzie mógł
 
 ## /get_text 
 endpoint zwraca wszystkie obiekty Text oraz ich ID z bazy danych
+
+aplikacja została zdeployowana za pomocą heroku zgodnie z instrukcją z linku https://github.com/daftcode/daftacademy-python_levelup-spring2021/blob/master/1_D_jak_deploy/D_jak_Deploy.ipynb punkty 5 i 6
