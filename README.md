@@ -1,6 +1,6 @@
 # Notif.ai zadanie rekrutacyjne
 
-Powyższą aplikacją jest API służace do zapisywania, zwracania
+Powyższą aplikacją napisaną we Frameworku FastAPI jest API służace do zapisywania, zwracania
 zapisanych oraz edycji krótkich tekstów (do 160 znaków). 
  
 
