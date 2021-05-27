@@ -1,5 +1,9 @@
 # Notif.ai zadanie rekrutacyjne
 
+Powyższą aplikacją jest API służace do zapisywania, zwracania
+zapisanych oraz edycji krótkich tekstów (do 160 znaków). 
+ 
+
 aplikacja dostępna jest pod adresem https://daftcode-course.herokuapp.com/
 
 dokumentacja automatyczna zapewniona przez framework FastAPI dostępna jest pod adresem https://daftcode-course.herokuapp.com/docs#/
