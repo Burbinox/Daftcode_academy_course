@@ -1,17 +1,15 @@
-# Notif.ai zadanie rekrutacyjne
+# Notif.ai recruitment task
 
-Powyższą aplikacją napisaną we Frameworku FastAPI jest API służace do zapisywania, zwracania
-zapisanych oraz edycji krótkich tekstów (do 160 znaków). 
+The application is an API for saving, returning saved and edit short texts (up to 160 characters). App is written in the FastAPI Framework
  
+The application should be available at https://daftcode-course.herokuapp.com/
 
-aplikacja dostępna jest pod adresem https://daftcode-course.herokuapp.com/
+Automatic documentation provided by the FastAPI framework is available at https://daftcode-course.herokuapp.com/docs#/
 
-dokumentacja automatyczna zapewniona przez framework FastAPI dostępna jest pod adresem https://daftcode-course.herokuapp.com/docs#/
-
-Kilka słow o endpointach i ich działaniu:
+A few words about endpoints and how they work:
 ## /get_text/{id} metoda: GET
-endpoint służący do pobierania tekstów o podanym przez użytkownika ID, dostępny dla użytkowników wszystkich użytkowników (authorized i unauthorized)
-zwraca obiekt w formacie:
+endpoint for getting texts with user-specified ID, available to users of all users (authorized and unauthorized)
+returns objeect in format:
 ```
 {
     'id': int
@@ -21,8 +19,8 @@ zwraca obiekt w formacie:
 ```
 
 ## /put_text metoda: POST 
-endpoint służący do utworzenia lub edycji (jeśli użytkownik poda ID, które już istnieje dany obiekt zostanie zedytowany) 
-tekstów o podanym ID, wymaga autoryzacji. Wymaga pliku json w formacie:
+endpoint used to create or edit (if the user gives an ID that already exists, the object will be edited)
+texts with the given ID, requires authorization. Requires a json file in the format:
 ```
 {
     'id': int
@@ -30,12 +28,12 @@ tekstów o podanym ID, wymaga autoryzacji. Wymaga pliku json w formacie:
 }
 ```
 ## /delete_text/{id} metoda: DELETE
-endpoint służący do usuwania tekstów o podanym ID, wymaga autoryzacji.
+endpoint used to remove texts with the given ID, requires authorization.
 
 ## /login metoda: GET
-endopoint służacy do autoryzacji, dzięki niemu użytkownik będzie mógł 
+endopoint for authorization, the user will be able to use the POST and DELETE methods
 
 ## /get_text metoda: GET
-endpoint zwraca wszystkie obiekty Text oraz ich ID z bazy danych
+endpoint returns all Text objects and their IDs from the database
 
-aplikacja została zdeployowana za pomocą heroku zgodnie z instrukcją z linku https://github.com/daftcode/daftacademy-python_levelup-spring2021/blob/master/1_D_jak_deploy/D_jak_Deploy.ipynb punkty 5 i 6
+the application has been deployed using herok according to the instructions in the link https://github.com/daftcode/daftacademy-python_levelup-spring2021/blob/master/1_D_jak_deploy/D_jak_Deploy.ipynb points 5 and 6
